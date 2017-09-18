@@ -289,9 +289,9 @@
 				var endModel, end_X, end_Y, endType;
 				var firstHole, secondHole;
 				//挂纤轮
-
 				var firstLineLoop, secondLineLoop;
-
+				//大线环
+				var bigLineLoop, bigLineLoopIndex;
 				var r_index;
 				/*
 				* A(1,1)		->1
@@ -347,13 +347,18 @@
 							{
 								//一共13个挂线轮
 								if(firstLineLoop){
-
+									firstLineLoop  = parseInt(stepString.substr(stepString.length -1, 1));
 								}else{
+									secondLineLoop  = parseInt(stepString.substr(stepString.length -1, 1));
 
 								}
 							}
 							break;
 							case 5:
+							{
+								bigLineLoop = parseInt(stepString.substr(0, 1));
+								bigLineLoopIndex = parseInt(stepString.substr(stepString.length - 1, 1));
+							}
 							break;
 
 						}
@@ -373,6 +378,9 @@
 				}else{
 
 				}
+
+				//画挂纤轮,挂纤轮需要进口和出口
+				drawLineLoop(firstLineLoop, firstHole, bigLineLoop, bigLineLoopIndex);
 			}
 
 
@@ -1130,6 +1138,39 @@
 				scene.add(pointCubeExt);
 			}
 
+			/*
+			* 画挂纤轮
+			*/
+			function drawLineLoop(lineLoopIndex, holeIndex, bigLineLoop, bigLineLoopIndex){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+
+				//先画挂纤轮与大小孔间的线
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 65, 18, 1);
+				var pointCube = new THREE.Mesh(geometry1, material);
+				pointCube.rotation.y = 1.58;
+				pointCube.position.x = -62;
+				pointCube.position.z = -20;
+				pointCube.position.y = 212;
+				scene.add(pointCube);
+
+				//画挂纤轮上的线
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 40, 18, 1);
+				var pointCube1 = new THREE.Mesh(geometry1, material);
+				pointCube1.rotation.x = 1.58;
+				pointCube1.position.x = -62;
+				pointCube1.position.z = -40;
+				pointCube1.position.y = 244;
+				scene.add(pointCube1);
+
+				//画挂纤轮到线环的线
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 65, 18, 1);
+				var pointCube2 = new THREE.Mesh(geometry1, material);
+				pointCube2.rotation.y = 1.58;
+				pointCube2.position.x = -62;
+				pointCube2.position.z = -60;
+				pointCube2.position.y = 212;
+				scene.add(pointCube2);
+			}
 
 			function drawLinePointToCircle(model_index, x_index){
 				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
