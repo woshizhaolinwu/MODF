@@ -23,8 +23,8 @@
       <file leaf-file-name="webgl_loader_obj_mtl.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/webgl_loader_obj_mtl.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="1040" column="50" selection-start-line="1040" selection-start-column="0" selection-end-line="1041" selection-end-column="0" />
+            <state relative-caret-position="511">
+              <caret line="347" column="42" selection-start-line="347" selection-start-column="42" selection-end-line="347" selection-end-column="42" />
               <folding>
                 <element signature="e#1828#1872#0" expanded="true" />
                 <element signature="e#2040#2085#0" expanded="true" />
@@ -526,8 +526,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/webgl_loader_obj_mtl.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="1040" column="50" selection-start-line="1040" selection-start-column="0" selection-end-line="1041" selection-end-column="0" />
+        <state relative-caret-position="511">
+          <caret line="347" column="42" selection-start-line="347" selection-start-column="42" selection-end-line="347" selection-end-column="42" />
           <folding>
             <element signature="e#1828#1872#0" expanded="true" />
             <element signature="e#2040#2085#0" expanded="true" />

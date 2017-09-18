@@ -287,8 +287,8 @@
 				var startModel, start_X, start_Y, startType;
 				//结束的节点
 				var endModel, end_X, end_Y, endType;
-				//挂纤轮
 				var firstHole, secondHole;
+				//挂纤轮
 
 				var firstLineLoop, secondLineLoop;
 
@@ -344,6 +344,14 @@
 							}
 							break;
 							case 4:
+							{
+								//一共13个挂线轮
+								if(firstLineLoop){
+
+								}else{
+
+								}
+							}
 							break;
 							case 5:
 							break;
@@ -361,9 +369,7 @@
 					//画点到孔
 					drawLineToHole(startModel, firstHole, start_X);
 					//画边线~
-					for(var i = 1; i <= 12; i++){
-						drawLinePointToCircleOne(i);
-					}
+					drawLinePointToCircleOne(firstHole);
 				}else{
 
 				}
@@ -1032,14 +1038,96 @@
 				//holeIndex = 4;
 				var z_position = 46;
 				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+
 				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 13, 18, 1);
+
+				//pointCube
 				var pointCube = new THREE.Mesh(geometry1, material);
 				pointCube.rotation.z = 1.57;
 				pointCube.position.x = -55;				//holeIndx = 1 . x = 55
 				pointCube.position.z = z_position;
 
-				pointCube.position.y = 207 - 28.7*(holeIndex -1);				//holeIndx = 1 . y = 207 (item *82)
+				var geometry2 = new THREE.CylinderGeometry(0.5, 0.5, 66, 18, 1);
+				var pointCubeExt = new THREE.Mesh(geometry2, material);
+				pointCubeExt.rotation.x = 1.58;
+				pointCubeExt.position.x = -62;
+				pointCubeExt.position.z = 13;
+
+
+				switch(holeIndex){
+					case 1:
+						pointCube.position.y = 207;
+						pointCubeExt.position.y = 207;
+
+					break;
+					case 2:
+						pointCube.position.y = 207 -28.5;
+						pointCubeExt.position.y = 207 -28.5;
+					break;
+					case 3:
+						pointCube.position.y = 207 -57;
+						pointCubeExt.position.y = 207 -57;
+
+					break;
+					case 4:
+					{
+						pointCube.position.y = 207 -87;
+						pointCubeExt.position.y = 207 -87;
+
+					}
+					break;
+					case 5:
+					{
+						pointCube.position.y = 207 -159;
+						pointCubeExt.position.y = 207 -159;
+
+					}
+					break;
+					case 6:
+					{
+						pointCube.position.y = 207 -187;
+						pointCubeExt.position.y = 207 -187;
+					}
+					break;
+					case 7:{
+						pointCube.position.y = 207 -217;
+						pointCubeExt.position.y = 207 -217;
+					}
+					break;
+					case 8:
+					{
+						pointCube.position.y = 207 -248;
+						pointCubeExt.position.y = 207 -248;
+					}
+					break;
+					case 9:
+					{
+						pointCube.position.y = 207 -323;
+						pointCubeExt.position.y = 207 -323;
+					}
+					break;
+					case 10:
+					{
+						pointCube.position.y = 207 -351;
+						pointCubeExt.position.y = 207 -351;
+					}
+					break;
+					case 11:
+					{
+						pointCube.position.y = 207 -380;
+						pointCubeExt.position.y = 207 -380;
+					}
+					break;
+					case 12:
+					{
+						pointCube.position.y = 207 -410;
+						pointCubeExt.position.y = 207 -410;
+					}
+					break;
+
+				}
 				scene.add(pointCube);
+				scene.add(pointCubeExt);
 			}
 
 
