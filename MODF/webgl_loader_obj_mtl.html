@@ -130,7 +130,7 @@
 					return eval('('+str+')');
 				}
 				var value = 1;
-				var jsonstr = '{"count":"1","step0": ["请选择一根长度为：8米的网线。", "先从1#机架的96芯设备单元1(1,1)端口出来往下经过下方邻近的8位小线环。", "往右穿过中线环再到设备单元1的大线环1" , "穿过大线环1后，往上经过1#机架侧面第1个挂纤轮。再到最下面的挂纤轮，调头向上绕过1#机架侧面第1个挂纤轮。", "往下进入1#机架的96芯设备单元2的大线环1。", "从1#机架的96芯设备单元2的大线环1出来后，往左进入1#机架设备单元2的中线环，并将线嵌入邻近的8位小线环中。", "最后往上将线插入1#机架96芯设备单元2(1,1)的端口中。"],"step1":"1(1,1)","step2":"1-大线环1","step3": "挂纤轮-1","step4": "挂纤轮-13","step5": "挂纤轮-1","step6": "2-大线环1","step7": "2(1,1)","step8": ""}';
+				var jsonstr = '{"count":"1","step0": ["请选择一根长度为：8米的网线。", "先从1#机架的96芯设备单元1(1,1)端口出来往下经过下方邻近的8位小线环。", "往右穿过中线环再到设备单元1的大线环1" , "穿过大线环1后，往上经过1#机架侧面第1个挂纤轮。再到最下面的挂纤轮，调头向上绕过1#机架侧面第1个挂纤轮。", "往下进入1#机架的96芯设备单元2的大线环1。", "从1#机架的96芯设备单元2的大线环1出来后，往左进入1#机架设备单元2的中线环，并将线嵌入邻近的8位小线环中。", "最后往上将线插入1#机架96芯设备单元2(1,1)的端口中。"],"step1":"A(1,1)","step2":"A-小孔","step3": "B-大孔","step4": "挂纤轮-1","step5": "2-大线环1","step6": "2(1,1)","step7": "","step8":"","step9":"","step10":""}';
 				if(data){
 					//json1= parse_json_by_eval(data);
 					var result = data.step0;
@@ -147,7 +147,11 @@
 				var x = json1.step0[0];
 				document.getElementById("step_text").innerHTML=x;
 				obj_count = parseInt(json1.count);
-				drawLineNew();
+				if(obj_count == 1){
+					drawLineNewOne();
+				}else{
+					//绘画两个机架，相对复杂
+				}
 			}, function(status) { //error detection....
 			  alert('Something went wrong.');
 			});
@@ -273,19 +277,22 @@
 
 			}
 
-			function drawLineNew(){
+
+
+			function drawLineNewOne(){
 				/*
 					变量的定义
 				*/
 				//开始的节点
-				var startModel, start_X, start_Y;
+				var startModel, start_X, start_Y, startType;
 				//结束的节点
-				var endModel, end_X, end_Y;
+				var endModel, end_X, end_Y, endType;
 				//挂纤轮
-				var 
+				var firstHole, secondHole;
 
+				var firstLineLoop, secondLineLoop;
 
-
+				var r_index;
 				/*
 				* A(1,1)		->1
 				* A-小孔         ->2
@@ -294,21 +301,47 @@
 				* 2-大线环1		->5
 				* 2(1,1)		->6
 				*/
+				/*
+				* startType
+				* 0 72芯
+				* 1 96芯
+				*/
  				var stringArray = new Array(json1.step1, json1.step2, json1.step3, json1.step4, json1.step5, json1.step6, json1.step7, json1.step8, json1.step9, json1.step10);
 				var typeString;
  				//json1.step1  -> step1一般都是从口子出来
  				for(var i = 0; i < stringArray.length; i++){
  					if(stringArray[i] != ""){
 						typeString = checkStepString(stringArray[i]);
+						var stepString = stringArray[i];
+
 						switch(typeString){
 							case 1:
 							{
-
+								startType = 0;
+								//如果是第一步，则是start, 如果不是第一不，则不是start
+								r_index = stepString.indexOf(")");
+								if(i == 0){
+									//解析成start,
+									startModel = stepString.substr(0,1);
+									start_X = parseInt(stepString.substr(2,1));
+									start_Y = parseInt(stepString.substring(4,r_index));
+								}else{
+									//解析成end
+									endModel = stepString.substr(0,1);
+									end_X = parseInt(stepString.substr(2,1));
+									end_Y = parseInt(stepString.subString(4, r_index));
+								}
 							}
 							break;
+							//大小孔合并
 							case 2:
-							break;
 							case 3:
+							{
+								//找出是哪个单元的
+								var holeString = stepString.substr(0,1);
+								firstHole = convertABC(holeString);
+
+							}
 							break;
 							case 4:
 							break;
@@ -318,6 +351,22 @@
 						}
  					}
  				}
+
+
+ 				//开始画线, 画出来的线
+				drawPointLineOne(startType, startModel, start_X, start_Y);
+				//drawPointLineOne(0, "L", 1, 1);
+				//如果是从72芯片的开始
+				if(startType == 0){
+					//画点到孔
+					drawLineToHole(startModel, firstHole, start_X);
+					//画边线~
+					for(var i = 1; i <= 12; i++){
+						drawLinePointToCircleOne(i);
+					}
+				}else{
+
+				}
 			}
 
 
@@ -338,11 +387,7 @@
 				var circle_index, to_circle_index;
 
 				//start
-				var start = json1.step1;
-				var r_index = start.indexOf(")");
-				model_index = parseInt(start.substr(0,1));
-				x_index = parseInt(start.substr(2,1));
-				y_index = parseInt(start.substring(4,r_index));
+
 
 				//to
 				var to = json1.step7;
@@ -454,141 +499,546 @@
 				}
 				return pointCube;
 			}
-			function drawPointLine(model_index, x_index, y_index){
-				//(0,0点的坐标)
-				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534} );
-				switch(y_index){
+
+
+			/*
+			*	画开始的点
+			*	区分两种情况， 是72芯的点还是96芯的点
+			*
+			*/
+			function drawPointLineOne(startType, startMode, start_X, start_Y){
+
+				if(startType == 0){
+					//(0,0点的坐标)
+					var material = new THREE.MeshBasicMaterial( { color: 0xfdc534} );
+					var model_index = convertABC(startMode); //-> just for test
+					var z_position = 46;
+					switch(start_Y){
+						case 1:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 16, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -42;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+
+						break;
+
+						case 2:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 21, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -40;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+
+						break;
+
+						case 3:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 25, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -38;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+						case 4:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -36;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+						case 5:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 33, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -34;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 6:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 36, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -33;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 7:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 39, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -31;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 8:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 42, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -29;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 9:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 45, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -28;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 10:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 48, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -26;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+
+						case 11:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 51, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -25;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+						case 12:
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 52, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+
+							//只有y是不一样的
+							pointCube.rotation.z = 1.58;
+							pointCube.position.x = -23;
+							pointCube.position.z = z_position;
+							getPointCubeByModelIndex(model_index, start_X, pointCube);
+						break;
+					}
+				}else{
+
+				}
+				scene.add(pointCube);
+			}
+
+			//将A, B, C, D, E, F, G, H, I转化为数字
+			function convertABC(ModelChar){
+				var convertResult = 0;
+				//var testArray = {'A','B'};
+				var convertArray = new Array("A","B","C","D","E","F","G","H","I","J","K","L");
+				var resultArray = new Array(1,2,3,4,5,6,7,8,9,10,11,12);
+				for(var i = 0; i < convertArray.length; i++){
+					if(ModelChar == convertArray[i]){
+						return resultArray[i];
+					}
+				}
+			}
+
+			/*
+			* 72芯画线到大小孔的位置
+			*/
+			function drawLineToHole(Model, hole_index,x_index){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				var ModeIndex = convertABC(Model);
+				var z_position = 46;
+				//ModeIndex =12;
+				//hole_index = 12;
+				//x_index = 1;
+				if(ModeIndex > hole_index){
+					return;
+				}
+				switch(ModeIndex){
 					case 1:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 30, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index <= 4){
+							var calIndex = hole_index -1;
+							var calIndex_X = x_index -1;
+							var length = 25+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 220 - calIndex*15 -calIndex_X *2;					//起始是220
+						}else if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-1;
+							var calIndex_X = x_index -1;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -199;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 184+ calIndex*33 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 139.5 - calIndex*16.5 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
 
+							var length = 346+ calIndex*33 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 59.5 - calIndex*16.5 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 2:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 35, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index <= 4){
+							var calIndex = hole_index -2;
+							var calIndex_X = x_index -2;
+							var length = 20+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 188.5 - calIndex*15 -calIndex_X *2;					//起始是220
+						}else if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-1;
+							var calIndex_X = x_index -1;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -197;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 152+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 126 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
 
+							var length = 316+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 44.5 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 3:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 39, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index <= 4){
+							var calIndex = hole_index -3;
+							var calIndex_X = x_index -3;
+							var length = 17+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 158.5 - calIndex*15 -calIndex_X *2;					//起始是220
+						}else if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-1;
+							var calIndex_X = x_index -1;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -195;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 126+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 112 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 287+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 30 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 					case 4:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 43, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index <= 4){
+							var calIndex = hole_index -4;
+							var calIndex_X = x_index -4;
+							var length = 12+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 126.5 - calIndex*15 -calIndex_X *2;					//起始是220
+						}else if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-1;
+							var calIndex_X = x_index -1;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -193;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 96+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 97 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 287+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 30 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
-					case 5:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 47, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -191;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+
+					case 5:
+					{
+						if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-1;
+							var calIndex_X = x_index -1;
+
+							var length = 24+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 60 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 188 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -21 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 6:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 50, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-2;
+							var calIndex_X = x_index -2;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -190;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 22+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = 30 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 158 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -35 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 7:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 53, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-3;
+							var calIndex_X = x_index -3;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -188;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 16+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -2 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 128 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -50 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 8:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 56, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+					{
+						if(hole_index > 4 && hole_index <=8){
+							var calIndex = hole_index - 4-4;
+							var calIndex_X = x_index -4;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -186;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 13+ calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = 50;
+							//先hardCode看下
+							pointCube.position.y = -33 - calIndex*15 - calIndex_X *2;					//起始是220
+						}else if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
+
+							var length = 98 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -64 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
+					}
 					break;
 
 					case 9:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 59, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+						if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -1;
+							var calIndex_X = x_index -1;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -185;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 24 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -102 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
 					break;
 
 					case 10:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 62, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+						if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -2;
+							var calIndex_X = x_index -2;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -183;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 20 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -133 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
 					break;
 
 					case 11:
-						var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 65, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+						if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -3;
+							var calIndex_X = x_index -3;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -182;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 14 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -165 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
 					break;
 					case 12:
-											var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 68, 18, 1);
-						var pointCube = new THREE.Mesh(geometry1, material);
+						if(hole_index >8 && hole_index<=12){
+							var calIndex = hole_index - 8 -4;
+							var calIndex_X = x_index - 4;
 
-						//只有y是不一样的
-						pointCube.rotation.z = 1.58;
-						pointCube.position.x = -180;
-						pointCube.position.z = 50;
-						getPointCubeByModelIndex(model_index, x_index, pointCube);
+							var length = 12 + calIndex*30 - calIndex_X * 4;
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, length, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -50;
+							pointCube.position.z = z_position;
+							//先hardCode看下
+							pointCube.position.y = -196 - calIndex*15 - calIndex_X *2;					//起始是220
+						}
 					break;
 				}
+				scene.add(pointCube);
+			}
+			//72芯到边角的线
+			function drawLinePointToCircleOne(holeIndex){
+				//holeIndex = 4;
+				var z_position = 46;
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 13, 18, 1);
+				var pointCube = new THREE.Mesh(geometry1, material);
+				pointCube.rotation.z = 1.57;
+				pointCube.position.x = -55;				//holeIndx = 1 . x = 55
+				pointCube.position.z = z_position;
+
+				pointCube.position.y = 207 - 28.7*(holeIndex -1);				//holeIndx = 1 . y = 207 (item *82)
 				scene.add(pointCube);
 			}
 
@@ -848,7 +1298,7 @@
 				return 4;
 			}else if(StringExist(stepString,"(")||StringExist(stepString,")")){
 				//72／96芯的孔
-				var firstChar = parseInt(stepString.subString(0, 1));
+				var firstChar = parseInt(stepString.substr(0, 1));
 				if(firstChar >= 1 && firstChar <=10){
 					return 6;
 				}else{
@@ -864,6 +1314,20 @@
 				return 0;
 			}
 		}
+
+		//进行绘画动作
+		/*
+		* 画出口的线， 分为72芯片还是96芯出来
+		*/
+		function drawStartLine(startType, startModel, start_X, start_Y)
+		{
+			if(startType == 0){		//72芯
+				drawPointLine();
+			}else{					//96芯
+
+			}
+		}
+
 		</script>
 
 	</body>
