@@ -419,7 +419,7 @@
 					drawLinePointToCircleOne(firstHole);	// i -> firstHole
 				}else{
 					//for(var i = 1; i <= 24; i++){
-						drawPointOf96(endModel, end_X, end_Y);
+					drawPointOf96(endModel, end_X, end_Y);
 					//}
                  }
 			}
@@ -1529,34 +1529,12 @@
 				pointCube.position.z = -125; //z是不变的
 				pointCube.position.y = 225 - (X_Index  - 1)*2  - 53*(ModelIndex -1);
 
-				/*switch(ModelIndex){
-					case 1:
-					{
-
-					}
-					break;
-					case 2:
-					{
-
-					}
-					break;
-					case 3:
-					break;
-					case 4:
-					break;
-					case 5:
-					break;
-					case 6:
-					break;
-					case 7:
-					break;
-					case 8:
-					break
-					case 9:
-					break;
-				}*/
 				scene.add(pointCube);
 			}
+
+			/*
+			* hu
+			*/
 
 			function drawLinePointToCircle(model_index, x_index){
 				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
