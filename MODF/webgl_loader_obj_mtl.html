@@ -248,6 +248,7 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 		 		initImageIcon();
+		 		controls.revertTO(); //just for test
 			}
 
 			function onWindowResize() {
@@ -270,9 +271,7 @@
 			function render() {
 				camera.position.x += ( mouseX - camera.position.x ) * .05;
 				camera.position.y += ( - mouseY - camera.position.y ) * .05;
-
 				camera.lookAt( scene.position );
-
 				renderer.render( scene, camera );
 
 			}
@@ -293,6 +292,11 @@
 				//大线环
 				var bigLineLoop, bigLineLoopIndex;
 				var r_index;
+
+				//96芯的节点
+				//var 96Model_Start, 96_X_Start, 96_Y_Start;
+				//var 96Model_End, 96_X_End, 96_Y_End;
+
 				/*
 				* A(1,1)		->1
 				* A-小孔         ->2
@@ -317,19 +321,20 @@
 						switch(typeString){
 							case 1:
 							{
-								startType = 0;
 								//如果是第一步，则是start, 如果不是第一不，则不是start
 								r_index = stepString.indexOf(")");
 								if(i == 0){
 									//解析成start,
+									startType = 0;
 									startModel = stepString.substr(0,1);
 									start_X = parseInt(stepString.substr(2,1));
 									start_Y = parseInt(stepString.substring(4,r_index));
 								}else{
 									//解析成end
+									endType = 1;
 									endModel = stepString.substr(0,1);
 									end_X = parseInt(stepString.substr(2,1));
-									end_Y = parseInt(stepString.subString(4, r_index));
+									end_Y = parseInt(stepString.substring(4, r_index));
 								}
 							}
 							break;
@@ -346,7 +351,7 @@
 							case 4:
 							{
 								//一共13个挂线轮
-								if(firstLineLoop){
+								if(firstLineLoop== undefined){
 									firstLineLoop  = parseInt(stepString.substr(stepString.length -1, 1));
 								}else{
 									secondLineLoop  = parseInt(stepString.substr(stepString.length -1, 1));
@@ -360,27 +365,63 @@
 								bigLineLoopIndex = parseInt(stepString.substr(stepString.length - 1, 1));
 							}
 							break;
-
+							case 6:
+							{
+								//如果是第一步，则是start, 如果不是第一不，则不是start
+								r_index = stepString.indexOf(")");
+								if(i == 0){
+									//解析成start,
+									startType = 0;
+									startModel = parseInt(stepString.substr(0,1));
+									start_X = parseInt(stepString.substr(2,1));
+									start_Y = parseInt(stepString.substring(4,r_index));
+								}else{
+									//解析成end
+									endType = 1;
+									endModel = parseInt(stepString.substr(0,1));
+									end_X = parseInt(stepString.substr(2,1));
+									end_Y = parseInt(stepString.substring(4, r_index));
+								}
+							}
+							break;
 						}
  					}
  				}
 
 
- 				//开始画线, 画出来的线
-				drawPointLineOne(startType, startModel, start_X, start_Y);
 				//drawPointLineOne(0, "L", 1, 1);
 				//如果是从72芯片的开始
 				if(startType == 0){
+					//开始画线, 画出来的线
+					drawPointLineOne(startType, startModel, start_X, start_Y);
+
 					//画点到孔
-					drawLineToHole(startModel, firstHole, start_X);
+					drawLineToHole(startModel, firstHole, start_X); // i -> firstHole
 					//画边线~
-					drawLinePointToCircleOne(firstHole);
+					drawLinePointToCircleOne(firstHole);	// i -> firstHole
 				}else{
 
 				}
 
 				//画挂纤轮,挂纤轮需要进口和出口
 				drawLineLoop(firstLineLoop, firstHole, bigLineLoop, bigLineLoopIndex);
+
+
+				//绘画
+
+				//画终点
+				if(endType == 0){
+					//开始画线, 画出来的线
+					drawPointLineOne(startType, endModel, end_X, end_Y);
+					//画点到孔
+					drawLineToHole(endModel, firstHole, end_X); // i -> firstHole
+					//画边线~
+					drawLinePointToCircleOne(firstHole);	// i -> firstHole
+				}else{
+					//for(var i = 1; i <= 24; i++){
+						drawPointOf96(endModel, end_X, end_Y);
+					//}
+                 }
 			}
 
 
@@ -1140,27 +1181,16 @@
 
 			/*
 			* 画挂纤轮
+			* ---------------------开始-------------------------
 			*/
 			function drawLineLoop(lineLoopIndex, holeIndex, bigLineLoop, bigLineLoopIndex){
 				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
 
 				//先画挂纤轮与大小孔间的线
-				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 65, 18, 1);
-				var pointCube = new THREE.Mesh(geometry1, material);
-				pointCube.rotation.y = 1.58;
-				pointCube.position.x = -62;
-				pointCube.position.z = -20;
-				pointCube.position.y = 212;
-				scene.add(pointCube);
+				drawLineLoopToHole(lineLoopIndex, holeIndex);
 
 				//画挂纤轮上的线
-				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 40, 18, 1);
-				var pointCube1 = new THREE.Mesh(geometry1, material);
-				pointCube1.rotation.x = 1.58;
-				pointCube1.position.x = -62;
-				pointCube1.position.z = -40;
-				pointCube1.position.y = 244;
-				scene.add(pointCube1);
+				drawLineLoopHor(lineLoopIndex); //lineLoopIndex
 
 				//画挂纤轮到线环的线
 				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 65, 18, 1);
@@ -1170,6 +1200,362 @@
 				pointCube2.position.z = -60;
 				pointCube2.position.y = 212;
 				scene.add(pointCube2);
+			}
+
+			//画挂纤轮上的线
+			function drawLineLoopHor(lineLoopIndex){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 40, 18, 1);
+				var pointCube1 = new THREE.Mesh(geometry1, material);
+				pointCube1.rotation.x = 1.58;
+				pointCube1.position.x = -62;
+				pointCube1.position.z = -40;
+				pointCube1.position.y = 244 - (lineLoopIndex -1 )*35;	//1-244
+				scene.add(pointCube1);
+			}
+
+			//画挂线轮到大小孔的线
+			function drawLineLoopToHole(lineLoopIndex, holeIndex){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				//lineLoopIndex =13;
+				//holeIndex = 12;
+				//进行switch判断
+
+				switch(lineLoopIndex)
+				{
+					case 1:
+					{
+						if(holeIndex <= 4){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 37 + (holeIndex -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 226 - (holeIndex -1)*14.5;
+						}else if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 196 + (holeIndex - 4 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 146 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 360 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 64 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 2:
+					{
+						if(holeIndex <= 4){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 31 + (holeIndex -2 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 208 - (holeIndex -1)*14.5;
+						}else if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 162 + (holeIndex - 4 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 129 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 325 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 47 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 3:
+					{
+						if(holeIndex <= 4){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 26 + (holeIndex -3 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 191 - (holeIndex -1)*14.5;
+						}else if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 126 + (holeIndex - 4 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 111 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 290 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 29 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 4:
+					{
+						if(holeIndex <= 4){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 18 + (holeIndex -4 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 173 - (holeIndex -1)*14.5;
+						}else if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 91 + (holeIndex - 4 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 94 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 255 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 11 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+
+					case 5:
+					{
+						if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 56 + (holeIndex - 4 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 76 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 220 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -6 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 6:
+					{
+						if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 20 + (holeIndex - 4 -1 )* 30, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 60 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 185 + (holeIndex - 8 -1 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -23 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+
+					case 7:
+					{
+						if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 44 + (holeIndex -7 )* 30, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 42 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 92 + (holeIndex - 7 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -41 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+
+					case 8:
+					{
+						if(holeIndex <= 8){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 40 + (holeIndex -8 )* 30, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = 24 - (holeIndex - 4 -1)*15;
+						}else if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 86 + (holeIndex - 8 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -58 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+
+					case 9:
+					{
+						if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 80 + (holeIndex - 9 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -76 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+
+					case 10:
+					{
+						if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 74 + (holeIndex - 10 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -93 - (holeIndex - 8 -1)*14.5;
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 11:
+					{
+						if(holeIndex <= 12){
+							if(holeIndex == 9){
+								var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 48 + (holeIndex - 11 )* 29, 18, 1);
+								var pointCube = new THREE.Mesh(geometry1, material);
+								pointCube.rotation.y = 1.58;
+								pointCube.position.x = -62;
+								pointCube.position.z = -20;
+								pointCube.position.y = -111 - (holeIndex - 8 -1)*14.5;
+							}else{
+								var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 68 + (holeIndex - 11 )* 29, 18, 1);
+								var pointCube = new THREE.Mesh(geometry1, material);
+								pointCube.rotation.y = 1.58;
+								pointCube.position.x = -62;
+								pointCube.position.z = -20;
+								pointCube.position.y = -111 - (holeIndex - 8 -1)*14.5;
+							}
+
+						}
+
+						scene.add(pointCube);
+					}
+					break;
+					case 12:
+					{
+						if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 31 + (holeIndex - 11 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -128 - (holeIndex - 8 -1)*14.5;
+						}
+						scene.add(pointCube);
+					}
+					break;
+					case 13:
+					{
+						if(holeIndex <= 12){
+							var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 27 + (holeIndex - 12 )* 29, 18, 1);
+							var pointCube = new THREE.Mesh(geometry1, material);
+							pointCube.rotation.y = 1.58;
+							pointCube.position.x = -62;
+							pointCube.position.z = -20;
+							pointCube.position.y = -145 - (holeIndex - 8 -1)*14.5;
+						}
+						scene.add(pointCube);
+					}
+					break;
+
+				}
+
+			}
+			/*---------------------结束-------------------------*/
+
+			/*
+			*  画96芯的点
+			*
+			*/
+			function drawPointOf96(ModelIndex, X_Index, Y_Index){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				/*
+				* 长度跟X有关， x坐标跟y有关
+				*/
+				//ModelIndex = 1;
+				/*
+				* 1, 1的长度30, X = 36
+				*
+				*/
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 28 - (X_Index -1) *4, 18, 1);
+				var pointCube = new THREE.Mesh(geometry1, material);
+				pointCube.rotation.y = 1.58;
+				pointCube.position.x = 36 - (Y_Index -1) *3.4;
+				pointCube.position.z = -125; //z是不变的
+				pointCube.position.y = 225 - (X_Index  - 1)*2  - 53*(ModelIndex -1);
+
+				/*switch(ModelIndex){
+					case 1:
+					{
+
+					}
+					break;
+					case 2:
+					{
+
+					}
+					break;
+					case 3:
+					break;
+					case 4:
+					break;
+					case 5:
+					break;
+					case 6:
+					break;
+					case 7:
+					break;
+					case 8:
+					break
+					case 9:
+					break;
+				}*/
+				scene.add(pointCube);
 			}
 
 			function drawLinePointToCircle(model_index, x_index){

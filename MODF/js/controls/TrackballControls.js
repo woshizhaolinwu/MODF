@@ -474,6 +474,13 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	}
 
+    this.revertTO = function(){
+        _moveCurr.copy( getMouseOnCircle(0, 0) );
+        _movePrev.copy( _moveCurr );
+        this.rotateX = 320;
+        _movePrev.copy( _moveCurr );
+        _moveCurr.copy( getMouseOnCircleEXT(this.rotateX, 0 ) );
+    }
 	this.rotate = function(rotateValue){
 	    //0~1680
         if(rotateValue == 1){
