@@ -421,6 +421,9 @@
 					//for(var i = 1; i <= 24; i++){
 					drawPointOf96(endModel, end_X, end_Y);
 					//}
+					for(var i = 1; i <= 9; i++){
+						drawHorLineOf96(i, end_Y);
+					}
                  }
 			}
 
@@ -1533,8 +1536,24 @@
 			}
 
 			/*
-			* hu
+			* 画96芯下方的直线
 			*/
+
+			function drawHorLineOf96(ModelIndex, Y_Index){
+				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
+				/*
+				* 根据ModelIndex不同， Y坐标会变
+				* 根据Y_Index不同， 长度会变
+				*/
+				Y_Index = 12;
+				var geometry1 = new THREE.CylinderGeometry(0.5, 0.5, 86 - ((Y_Index -1)*4), 18, 1);
+				var pointCube = new THREE.Mesh(geometry1, material);
+				pointCube.rotation.z = 1.58;
+				pointCube.position.x = -3 - (Y_Index -1)*2;
+				pointCube.position.z = -125; //z是不变的
+				pointCube.position.y = 212 - 54*(ModelIndex -1);
+				scene.add(pointCube);
+			}
 
 			function drawLinePointToCircle(model_index, x_index){
 				var material = new THREE.MeshBasicMaterial( { color: 0xfdc534 } );
